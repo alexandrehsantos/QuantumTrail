@@ -1,0 +1,26 @@
+# Core dependencies
+PyQt5==5.15.6
+pandas>=1.5.3
+numpy>=1.24.2
+
+# Data handling and analysis
+yfinance==0.1.70
+ta-lib==0.4.24
+
+# Plotting (if needed)
+matplotlib>=3.5.1
+
+# Testing
+pytest>=7.1.2
+
+# API interaction (for live trading)
+requests>=2.27.1
+
+# Date and time handling
+python-dateutil>=2.8.2
+
+# Optional: for improved performance
+numba>=0.55.1
+
+# Optional: for database interactions (if implemented)
+sqlalchemy>=1.4.36
