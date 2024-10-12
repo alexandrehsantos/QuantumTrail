@@ -25,7 +25,6 @@ RSIOversold = 30
 risk_percent = 0.02
 
 def get_data(symbol, timeframe, start_date=None):
-    # Request the rates
     if start_date:
         rates = mt5.copy_rates_from(symbol, timeframe, start_date, 1000)
     else:
@@ -65,7 +64,7 @@ def calculate_indicators(df):
 def calculate_lot_size(stop_loss_points):
     account_balance = mt5.account_info().balance
     risk_amount = account_balance * risk_percent
-    pip_value = mt5.symbol_info(symbol).trade_tick_value  # Get tick value from symbol info
+    pip_value = mt5.symbol_info(symbol).trade_tick_value
     lot_size = risk_amount / (stop_loss_points * pip_value)
     return round(lot_size, 2)
 
@@ -107,62 +106,13 @@ def buy_order():
         log_info(f"Buy order failed. Error code: {result.retcode}")
     return result
 
-def sell_order():
-    symbol_info = mt5.symbol_info(symbol)
-    if symbol_info is None:
-        log_info(f"{symbol} not found")
-        return
-    if not symbol_info.visible:
-        if not mt5.symbol_select(symbol, True):
-            log_info(f"Failed to select {symbol}")
-            return
-    if symbol_info.trade_mode == mt5.SYMBOL_TRADE_MODE_DISABLED:
-        log_info(f"Trading is disabled for {symbol}")
-        return
-
-    bid, ask = refresh_price(symbol)
-    price = bid
-
-    sl = price + (price * StopLossPercent / 100)
-    tp = price - (price * TakeProfitPercent / 100)
-
-    sl_points = abs(price - sl) / symbol_info.point
-    lot = calculate_lot_size(sl_points)
-
-    log_info(f"Placing sell order: Price={price}, SL={sl}, TP={tp}, Lot={lot}")
-    request = {
-        "action": mt5.TRADE_ACTION_DEAL,
-        "symbol": symbol,
-        "volume": lot,
-        "type": mt5.ORDER_TYPE_SELL,
-        "price": price,
-        "sl": sl,
-        "tp": tp,
-        "deviation": 20,
-        "magic": 234000,
-        "comment": "Sell signal",
-        "type_time": mt5.ORDER_TIME_GTC,
-        "type_filling": mt5.ORDER_FILLING_FOK,  # Changed to FOK
-    }
-    log_trade_request(request)
-
-    result = mt5.order_send(request)
-    if result.retcode != mt5.TRADE_RETCODE_DONE:
-        log_info(f"Order failed, retcode={result.retcode}")
-        result_dict = result._asdict()
-        for field in result_dict.keys():
-            log_info(f"{field}={result_dict[field]}")
-    else:
-        log_info(f"Order placed successfully. Order ticket: {result.order}")
-    return result
-
 def live_trading():
     trade_open = False
     log_info("Starting trading loop")
     while True:
         df = get_data(symbol, mt5.TIMEFRAME_M5)
         df = calculate_indicators(df)
-        df.dropna(inplace=True)  # Ensure no NaN values
+        df.dropna(inplace=True)
         current_price = df['close'].iloc[-1]
         macd_hist = df['macd_hist'].iloc[-1]
         rsi = df['rsi'].iloc[-1]

@@ -8,29 +8,20 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 def log_info(message):
     logging.info(message)
 
-class EnchanceMACDStrategy:
-    def __init__(
-        self,
-        data_source: DataSource,
-        symbol: str,
-        timeframe: int,
-        RSIOverbought: int = 70,
-        RSIOversold: int = 30,
-        risk_percent: float = 0.02
-    ):
-        self.data_source = data_source
-        self.symbol = symbol
-        self.timeframe = timeframe
+class EnchanceMACDStrategy(Strategy):
+    def __init__(self, data_source, symbol: str, timeframe: int, start_date=None, end_date=None, initial_balance=None, RSIOverbought: int = 70, RSIOversold: int = 30, risk_percent: float = 0.02):
+        super().__init__(data_source, symbol, timeframe, start_date, end_date)
+        self.initial_balance = initial_balance
         self.RSIOverbought = RSIOverbought
         self.RSIOversold = RSIOversold
         self.risk_percent = risk_percent
         self.trade_open = False
 
-    def apply(self, initial_balance, start_date, end_date):
-        df = self.data_source.get_data(self.symbol, self.timeframe, start_date, end_date)
+    def apply(self):
+        df = self.data_source.get_data(self.symbol, self.timeframe, self.start_date, self.end_date)
         df = self.calculate_indicators(df)
         df.dropna(inplace=True)
-        balance = initial_balance
+        balance = self.initial_balance
 
         for index, row in df.iterrows():
             current_price = row['close']

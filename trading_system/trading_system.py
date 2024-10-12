@@ -1,18 +1,15 @@
 ﻿import logging
 from datetime import datetime
+from typing import Dict, Any
 from .data_sources.data_source import DataSource
 from .strategies.strategy import Strategy
-import MetaTrader5 as mt5
 import sqlite3
-import matplotlib.pyplot as plt
+import MetaTrader5 as mt5
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-def log_info(message):
-    logging.info(message)
-
-def map_timeframe(timeframe):
+def map_timeframe(timeframe: int) -> mt5.TIMEFRAME_M1:
     mapping = {
         1: mt5.TIMEFRAME_M1,
         5: mt5.TIMEFRAME_M5,
@@ -27,56 +24,63 @@ def map_timeframe(timeframe):
     return mapping.get(timeframe, mt5.TIMEFRAME_M1)
 
 class TradingSystem:
-    def __init__(self, data_source: DataSource, strategy_class: Strategy):
+    def __init__(self, data_source: DataSource, strategy_class: type):
         self.data_source = data_source
         self.strategy_class = strategy_class
         self.conn = sqlite3.connect('trading_history.db')
         self.create_tables()
+        
+        logging.info(f"Initialized TradingSystem with data source: {type(self.data_source).__name__}")
 
-    def create_tables(self):
+    def create_tables(self) -> None:
         with self.conn:
             self.conn.execute('''
                 CREATE TABLE IF NOT EXISTS execution_data (
                     time TEXT,
-                    balance REAL
+                    balance REAL,
+                    trade_type TEXT,
+                    price REAL,
+                    lot_size REAL
                 )
             ''')
 
-    def start_automation(self, symbol: str, timeframe: int):
+    def run_strategy(self, symbol: str, timeframe: int, initial_balance: float, start_date: str = None, end_date: str = None) -> Dict[str, Any]:
         mapped_timeframe = map_timeframe(timeframe)
-        logging.info(f"Starting automation for {symbol} with mapped timeframe {mapped_timeframe}")
+        logging.info(f"Running strategy for {symbol} with mapped timeframe {mapped_timeframe}")
+        
         strategy = self.strategy_class(
             data_source=self.data_source,
             symbol=symbol,
-            timeframe=mapped_timeframe
+            timeframe=mapped_timeframe,
+            start_date=start_date,
+            end_date=end_date,
+            initial_balance=initial_balance
         )
         
-        while True:
-            # Implement live trading logic here
-            pass  # Placeholder for actual implementation
+        result = strategy.apply()
+        if start_date is not None and end_date is not None:
+            self._process_backtest_results(result)
+        return result
 
-    def run_backtest(self, symbol: str, timeframe: int, start_date, end_date):
-        mapped_timeframe = map_timeframe(timeframe)
-        logging.info(f"Running backtest for {symbol} with mapped timeframe {mapped_timeframe} from {start_date} to {end_date}")
-        
-        if isinstance(start_date, str):
-            start_date = datetime.strptime(start_date, "%Y-%m-%d")
-        if isinstance(end_date, str):
-            end_date = datetime.strptime(end_date, "%Y-%m-%d")
-        
-        try:
-            df = self.data_source.get_data(symbol, mapped_timeframe, start_date, end_date)
-        except ValueError as e:
-            logging.error(f"Error retrieving data: {e}")
-            return
+    def _process_backtest_results(self, results: Dict[str, Any]) -> None:
+        with self.conn:
+            for trade in results['trades']:
+                self.conn.execute('''
+                    INSERT INTO execution_data (time, balance, trade_type, price, lot_size)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (datetime.now().isoformat(), results['final_balance'], trade['type'], trade['price'], trade['lot_size']))
+        logging.info(f"Backtest results processed. Final balance: {results['final_balance']}")
 
-        strategy = self.strategy_class(
-            data_source=self.data_source,
-            symbol=symbol,
-            timeframe=mapped_timeframe
-        )
-        final_balance = strategy.apply(initial_balance=10000, start_date=start_date, end_date=end_date)
-        logging.info(f"Final Balance after backtest: {final_balance}")
+    def start_automation(self, symbol: str, timeframe: int, initial_balance: float) -> None:
+        self.run_strategy(symbol, timeframe, initial_balance)
+
+    def run(self):
+        symbol = self.data_source.symbol
+        timeframe = self.data_source.timeframe
+        initial_balance = 10000  # You may want to make this configurable
+
+        result = self.run_strategy(symbol, timeframe, initial_balance)
+        logging.info(f"Strategy execution completed. Result: {result}")
 
 def main():
     import argparse

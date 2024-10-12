@@ -1,127 +1,70 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QComboBox, QMessageBox, QDateEdit
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QComboBox, QMessageBox, QDateEdit, QMainWindow
 from PyQt5.QtCore import QDate
+from trading_system.trading_system import TradingSystem
+from trading_system.data_sources.live_data_source import LiveDataSource
+from trading_system.data_sources.historical_data_source import HistoricalDataSource
+from trading_system.strategies.macd_strategy import MACDStrategy
+from trading_system.strategies.mean_reversion_strategy import MeanReversionStrategy
 
-class TradingApp(QWidget):
+class TradingUI(QMainWindow):
     def __init__(self):
         super().__init__()
         self.initUI()
 
     def initUI(self):
         self.setWindowTitle('Trading System')
-        self.setGeometry(100, 100, 400, 300)
+        self.setGeometry(100, 100, 300, 200)
 
-        layout = QVBoxLayout()
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+        layout = QVBoxLayout(central_widget)
 
-        self.mode_label = QLabel('Mode:')
-        self.mode_combo = QComboBox(self)
-        self.mode_combo.addItem('Live', 'live')
-        self.mode_combo.addItem('Backtest', 'backtest')
-        self.mode_combo.currentIndexChanged.connect(self.toggle_date_inputs)
-
-        self.symbol_label = QLabel('Symbol:')
         self.symbol_input = QLineEdit(self)
+        self.symbol_input.setPlaceholderText('Enter symbol (e.g., BTCUSD)')
+        layout.addWidget(self.symbol_input)
 
-        self.timeframe_label = QLabel('Timeframe:')
-        self.timeframe_input = QLineEdit(self)
+        self.timeframe_combo = QComboBox(self)
+        self.timeframe_combo.addItems(['1m', '5m', '15m', '30m', '1h', '4h', '1d'])
+        layout.addWidget(self.timeframe_combo)
 
-        self.strategy_label = QLabel('Strategy:')
         self.strategy_combo = QComboBox(self)
-        self.strategy_combo.addItem('MACD', 'macd')
-        self.strategy_combo.addItem('Mean Reversion', 'mean_reversion')
-
-        self.start_date_label = QLabel('Start Date:')
-        self.start_date_input = QDateEdit(self)
-        self.start_date_input.setCalendarPopup(True)
-        self.start_date_input.setDate(QDate.currentDate())
-
-        self.end_date_label = QLabel('End Date:')
-        self.end_date_input = QDateEdit(self)
-        self.end_date_input.setCalendarPopup(True)
-        self.end_date_input.setDate(QDate.currentDate())
+        self.strategy_combo.addItems(['MACD', 'Mean Reversion'])
+        layout.addWidget(self.strategy_combo)
 
         self.start_button = QPushButton('Start Trading', self)
         self.start_button.clicked.connect(self.start_trading)
-
-        layout.addWidget(self.mode_label)
-        layout.addWidget(self.mode_combo)
-        layout.addWidget(self.symbol_label)
-        layout.addWidget(self.symbol_input)
-        layout.addWidget(self.timeframe_label)
-        layout.addWidget(self.timeframe_input)
-        layout.addWidget(self.strategy_label)
-        layout.addWidget(self.strategy_combo)
-        layout.addWidget(self.start_date_label)
-        layout.addWidget(self.start_date_input)
-        layout.addWidget(self.end_date_label)
-        layout.addWidget(self.end_date_input)
         layout.addWidget(self.start_button)
 
-        self.setLayout(layout)
-        self.toggle_date_inputs()  # Set initial state
-
-    def toggle_date_inputs(self):
-        mode = self.mode_combo.currentData()
-        if mode == 'backtest':
-            self.start_date_label.show()
-            self.start_date_input.show()
-            self.end_date_label.show()
-            self.end_date_input.show()
-        else:
-            self.start_date_label.hide()
-            self.start_date_input.hide()
-            self.end_date_label.hide()
-            self.end_date_input.hide()
-
     def start_trading(self):
-        from trading_system.trading_system import TradingSystem
-        from trading_system.data_sources.live_data_source import LiveDataSource
-        from trading_system.data_sources.historical_data_source import HistoricalDataSource
-        from trading_system.strategies.macd_strategy import MACDStrategy
-        from trading_system.strategies.mean_reversion_strategy import MeanReversionStrategy
-
-        mode = self.mode_combo.currentData()
         symbol = self.symbol_input.text()
-        timeframe_text = self.timeframe_input.text()
+        timeframe = self.timeframe_combo.currentText()
+        strategy_name = self.strategy_combo.currentText()
 
-        # Validate timeframe input
-        try:
-            timeframe = int(timeframe_text)
-        except ValueError:
-            QMessageBox.critical(self, 'Error', 'Timeframe must be an integer.')
+        if not symbol:
+            QMessageBox.warning(self, 'Input Error', 'Please enter a symbol.')
             return
 
-        strategy_name = self.strategy_combo.currentData()
+        try:
+            data_source = LiveDataSource(symbol=symbol, timeframe=timeframe)
+            data_source.initialize()
 
-        if strategy_name == 'macd':
-            strategy_class = MACDStrategy
-        elif strategy_name == 'mean_reversion':
-            strategy_class = MeanReversionStrategy
+            if strategy_name == 'MACD':
+                strategy = MACDStrategy
+            elif strategy_name == 'Mean Reversion':
+                strategy = MeanReversionStrategy
+            else:
+                raise ValueError(f"Unknown strategy: {strategy_name}")
 
-        if mode == 'backtest':
-            start_date = self.start_date_input.date().toString('yyyy-MM-dd')
-            end_date = self.end_date_input.date().toString('yyyy-MM-dd')
-            data_source = HistoricalDataSource()
-            trading_system = TradingSystem(data_source, strategy_class)
-            try:
-                trading_system.run_backtest(symbol, timeframe, start_date, end_date)
-                QMessageBox.information(self, 'Success', 'Backtest completed successfully.')
-            except Exception as e:
-                QMessageBox.critical(self, 'Error', f'Backtest failed: {e}')
-        elif mode == 'live':
-            data_source = LiveDataSource()
-            if not data_source.initialize():
-                QMessageBox.critical(self, 'Error', 'Failed to initialize LiveDataSource')
-                return
-            trading_system = TradingSystem(data_source, strategy_class)
-            try:
-                trading_system.start_automation(symbol, timeframe)
-                QMessageBox.information(self, 'Success', 'Live trading started successfully.')
-            except Exception as e:
-                QMessageBox.critical(self, 'Error', f'Live trading failed: {e}')
+            trading_system = TradingSystem(data_source, strategy)
+            trading_system.run()
 
-if __name__ == "__main__":
+            QMessageBox.information(self, 'Trading Started', f'Trading started for {symbol} with {strategy_name} strategy.')
+        except Exception as e:
+            QMessageBox.critical(self, 'Error', f'An error occurred: {str(e)}')
+
+if __name__ == '__main__':
     app = QApplication(sys.argv)
-    ui = TradingApp()
-    ui.show()
+    ex = TradingUI()
+    ex.show()
     sys.exit(app.exec_())

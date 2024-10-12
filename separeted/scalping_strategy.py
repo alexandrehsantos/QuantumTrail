@@ -8,31 +8,22 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 def log_info(message):
     logging.info(message)
 
-class ScalpingStrategy:
-    def __init__(
-        self,
-        data_source: DataSource,
-        symbol: str,
-        timeframe: int,
-        scalp_pips: int = 10,
-        risk_percent: float = 0.02
-    ):
-        self.data_source = data_source
-        self.symbol = symbol
-        self.timeframe = timeframe
+class ScalpingStrategy(Strategy):
+    def __init__(self, data_source: DataSource, symbol: str, timeframe: int, start_date=None, end_date=None, scalp_pips: int = 10, risk_percent: float = 0.02):
+        super().__init__(data_source, symbol, timeframe, start_date, end_date)
         self.scalp_pips = scalp_pips
         self.risk_percent = risk_percent
         self.trade_open = False
+        self.initial_balance = None
 
-    def apply(self, initial_balance, start_date, end_date):
-        df = self.data_source.get_data(self.symbol, self.timeframe, start_date, end_date)
-        balance = initial_balance
+    def apply(self):
+        df = self.data_source.get_data(self.symbol, self.timeframe, self.start_date, self.end_date)
+        balance = self.initial_balance
 
         for index, row in df.iterrows():
             current_price = row['close']
 
             if not self.trade_open:
-                # Example logic to place a buy or sell based on some condition
                 if self.should_buy(row):
                     self.execute_buy(current_price)
                 elif self.should_sell(row):
