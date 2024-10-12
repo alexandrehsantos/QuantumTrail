@@ -1,9 +1,10 @@
-﻿from typing import Dict, List, Optional
+﻿from typing import Dict, List, Optional, Any
 import pandas as pd
 from datetime import datetime, timedelta
 from .data_source import DataSource
 from ..utils.time_utils import convert_timeframe
 import MetaTrader5 as mt5
+import logging
 
 class LiveDataSource(DataSource):
     def __init__(self, symbol: str = "BTCUSD", timeframe: str = "1m"):
@@ -22,8 +23,6 @@ class LiveDataSource(DataSource):
     def initialize(self) -> None:
         if not self._initialized:
             if not mt5.initialize():
-                print("initialize() failed")
-                mt5.shutdown()
                 raise RuntimeError("MetaTrader5 initialization failed")
             self.mt5 = mt5
             self._initialized = True
@@ -34,7 +33,13 @@ class LiveDataSource(DataSource):
             start_date = datetime.now() - timedelta(days=1)
         if end_date is None:
             end_date = datetime.now()
-        rates = self.mt5.copy_rates_range(symbol, self._map_timeframe(timeframe), start_date, end_date)
+        
+        mapped_timeframe = self._map_timeframe(timeframe)
+        rates = self.mt5.copy_rates_range(symbol, mapped_timeframe, start_date, end_date)
+        
+        if rates is None or len(rates) == 0:
+            return pd.DataFrame()
+        
         df = pd.DataFrame(rates)
         df['time'] = pd.to_datetime(df['time'], unit='s')
         df.set_index('time', inplace=True)
@@ -125,62 +130,71 @@ class LiveDataSource(DataSource):
 
     def buy_order(self, symbol, volume, price, sl, tp, deviation=10, magic=234000, comment="Buy Order"):
         request = {
-            "action": mt5.TRADE_ACTION_DEAL,
+            "action": self.mt5.TRADE_ACTION_DEAL,
             "symbol": symbol,
             "volume": volume,
-            "type": mt5.ORDER_TYPE_BUY,
+            "type": self.mt5.ORDER_TYPE_BUY,
             "price": price,
             "sl": sl,
             "tp": tp,
             "deviation": deviation,
             "magic": magic,
             "comment": comment,
-            "type_time": mt5.ORDER_TIME_GTC,
-            "type_filling": mt5.ORDER_FILLING_FOK,
+            "type_time": self.mt5.ORDER_TIME_GTC,
+            "type_filling": self.mt5.ORDER_FILLING_FOK,
         }
-        result = mt5.order_send(request)
+        result = self.mt5.order_send(request)
         return result
 
     def sell_order(self, symbol, volume, price, sl, tp, deviation=10, magic=234000, comment="Sell Order"):
         request = {
-            "action": mt5.TRADE_ACTION_DEAL,
+            "action": self.mt5.TRADE_ACTION_DEAL,
             "symbol": symbol,
             "volume": volume,
-            "type": mt5.ORDER_TYPE_SELL,
+            "type": self.mt5.ORDER_TYPE_SELL,
             "price": price,
             "sl": sl,
             "tp": tp,
             "deviation": deviation,
             "magic": magic,
             "comment": comment,
-            "type_time": mt5.ORDER_TIME_GTC,
-            "type_filling": mt5.ORDER_FILLING_FOK,
+            "type_time": self.mt5.ORDER_TIME_GTC,
+            "type_filling": self.mt5.ORDER_FILLING_FOK,
         }
-        result = mt5.order_send(request)
+        result = self.mt5.order_send(request)
+        if result.retcode != self.mt5.TRADE_RETCODE_DONE:
+            logging.error(f"Sell order failed, retcode={result.retcode}, comment={result.comment}")
+            return None
+        logging.info(f"Sell order placed successfully. Ticket: {result.order}")
         return result
 
-    def get_positions(self, symbol: str):
-        return mt5.positions_get(symbol=symbol)
+    def get_positions(self, symbol: str) -> List[Any]:
+        self._ensure_initialized()
+        positions = self.mt5.positions_get(symbol=symbol)
+        if positions is None:
+            return []
+        return list(positions)
 
-    def close_position(self, ticket: int):
-        position = mt5.positions_get(ticket=ticket)
+    def close_position(self, ticket: int) -> bool:
+        self._ensure_initialized()
+        position = self.mt5.positions_get(ticket=ticket)
         if position:
             request = {
-                "action": mt5.TRADE_ACTION_DEAL,
+                "action": self.mt5.TRADE_ACTION_DEAL,
                 "position": ticket,
                 "symbol": position[0].symbol,
                 "volume": position[0].volume,
-                "type": mt5.ORDER_TYPE_SELL if position[0].type == mt5.ORDER_TYPE_BUY else mt5.ORDER_TYPE_BUY,
-                "price": mt5.symbol_info_tick(position[0].symbol).bid if position[0].type == mt5.ORDER_TYPE_BUY else mt5.symbol_info_tick(position[0].symbol).ask,
+                "type": self.mt5.ORDER_TYPE_SELL if position[0].type == self.mt5.ORDER_TYPE_BUY else self.mt5.ORDER_TYPE_BUY,
+                "price": self.mt5.symbol_info_tick(position[0].symbol).bid if position[0].type == self.mt5.ORDER_TYPE_BUY else self.mt5.symbol_info_tick(position[0].symbol).ask,
                 "deviation": 20,
                 "magic": 234000,
                 "comment": "Close position",
-                "type_time": mt5.ORDER_TIME_GTC,
-                "type_filling": mt5.ORDER_FILLING_IOC,
+                "type_time": self.mt5.ORDER_TIME_GTC,
+                "type_filling": self.mt5.ORDER_FILLING_IOC,
             }
-            result = mt5.order_send(request)
-            return result
-        return None
+            result = self.mt5.order_send(request)
+            return result.retcode == self.mt5.TRADE_RETCODE_DONE
+        return False
 
     def start_streaming(self, symbol: str, timeframe: int) -> None:
         logging.info(f"Starting streaming for {symbol} with timeframe {timeframe}")

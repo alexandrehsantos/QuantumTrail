@@ -9,6 +9,7 @@ class MeanReversionStrategy:
     def __init__(
         self,
         data_source: DataSource,
+        risk_manager,
         symbol: str,
         timeframe: int,
         mean_window: int = 20,
@@ -16,6 +17,7 @@ class MeanReversionStrategy:
         risk_percent: float = 0.02
     ):
         self.data_source = data_source
+        self.risk_manager = risk_manager
         self.symbol = symbol
         self.timeframe = timeframe
         self.mean_window = mean_window
@@ -52,24 +54,24 @@ class MeanReversionStrategy:
         return df
 
     def execute_buy(self, price):
-        sl = price - (price * 0.01)  # Example stop loss
-        tp = price + (price * 0.02)  # Example take profit
+        sl = price - (price * 0.01)
+        tp = price + (price * 0.02)
         result = self.data_source.buy_order(self.symbol, 0.01, price, sl, tp)
-        if result.get('status') == 'executed':
+        if result and result.get('status') == 'executed':
             logging.info(f"Buy order placed at {price}")
             self.trade_open = True
         else:
-            logging.error(f"Buy order failed: {result.get('error_code')}")
+            logging.error(f"Buy order failed: {result.get('error_code') if result else 'No result'}")
 
     def execute_sell(self, price):
-        sl = price + (price * 0.01)  # Example stop loss
-        tp = price - (price * 0.02)  # Example take profit
+        sl = price + (price * 0.01)
+        tp = price - (price * 0.02)
         result = self.data_source.sell_order(self.symbol, 0.01, price, sl, tp)
-        if result.get('status') == 'executed':
+        if result and result.get('status') == 'executed':
             logging.info(f"Sell order placed at {price}")
             self.trade_open = True
         else:
-            logging.error(f"Sell order failed: {result.get('error_code')}")
+            logging.error(f"Sell order failed: {result.get('error_code') if result else 'No result'}")
 
     def manage_positions(self, current_price):
         positions = self.data_source.get_positions(self.symbol)
