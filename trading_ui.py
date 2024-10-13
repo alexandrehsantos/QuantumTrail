@@ -4,7 +4,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import joblib
 import logging
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QComboBox, QMessageBox, QMainWindow
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QComboBox, QMessageBox, QMainWindow, QCheckBox
 from PyQt5.QtCore import QThread, pyqtSignal, QObject
 from trading_system.trading_system import TradingSystem
 from trading_system.data_sources.live_data_source import LiveDataSource
@@ -30,11 +30,9 @@ class TradingWorker(QObject):
 class TradingUI(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.trading_thread = None
-        self.trading_worker = None
-        self.initUI()
+        self.init_ui()
 
-    def initUI(self):
+    def init_ui(self):
         self.setWindowTitle('Trading System')
         self.setGeometry(100, 100, 300, 400)
 
@@ -59,6 +57,10 @@ class TradingUI(QMainWindow):
         layout.addWidget(self.strategy_label)
         layout.addWidget(self.strategy_combo)
 
+        # Add a checkbox for starting with minimum volume
+        self.min_volume_checkbox = QCheckBox("Start with Minimum Volume", self)
+        self.min_volume_checkbox.move(10, 130)  # Adjust position as needed
+
         self.start_button = QPushButton('Start Trading')
         self.start_button.clicked.connect(self.start_trading)
         layout.addWidget(self.start_button)
@@ -75,9 +77,12 @@ class TradingUI(QMainWindow):
         symbol = self.symbol_input.text()
         timeframe = self.timeframe_combo.currentText()
         model_path = "training/ml_model.pkl"  # Path to the model file
-        
-        trading_system = TradingSystem(strategy_class, data_source, symbol, timeframe, model_path=model_path)
-        
+
+        # Check if the user wants to start with the minimum volume
+        start_with_min_volume = self.min_volume_checkbox.isChecked()
+
+        trading_system = TradingSystem(strategy_class, data_source, symbol, timeframe, model_path=model_path, start_with_min_volume=start_with_min_volume)
+
         self.worker = TradingWorker(trading_system)
         self.thread = QThread()
         self.worker.moveToThread(self.thread)
@@ -104,7 +109,7 @@ class TradingUI(QMainWindow):
     def load_ml_model(self):
         try:
             # Adjust the path for Windows
-            model = joblib.load('ml_model.pkl')
+            model = joblib.load('training/ml_model.pkl')
             return model
         except FileNotFoundError:
             QMessageBox.critical(self, 'Error', 'Model file not found. Please ensure the model is trained and saved correctly.')

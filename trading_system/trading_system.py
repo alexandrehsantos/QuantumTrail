@@ -11,7 +11,7 @@ from .risk_management.risk_manager import RiskManager
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 
 class TradingSystem:
-    def __init__(self, strategy_class: Type[Strategy], data_source: DataSource, symbol: str, timeframe: str, model_path=None, features=None):
+    def __init__(self, strategy_class: Type[Strategy], data_source: DataSource, symbol: str, timeframe: str, model_path=None, features=None, start_with_min_volume=False):
         self.data_source = data_source
         self.symbol = symbol
         self.timeframe = timeframe
@@ -36,8 +36,7 @@ class TradingSystem:
             model = joblib.load(model_path)
             
             # Ensure features match those used in training
-            if features is None:
-                features = ['macd', 'signal_line', 'rsi']
+            features = ['macd', 'signal_line', 'rsi', 'log_tick_volume', 'log_spread', 'high_low_range', 'close_open_range']
             
             self.strategy = strategy_class(
                 data_source=self.data_source,
@@ -48,7 +47,8 @@ class TradingSystem:
                 features=features,
                 initial_balance=self.initial_balance,
                 start_date=self.start_date,
-                end_date=self.end_date
+                end_date=self.end_date,
+                start_with_min_volume=start_with_min_volume
             )
         else:
             self.strategy = strategy_class(
@@ -58,7 +58,8 @@ class TradingSystem:
                 timeframe=self.timeframe,
                 initial_balance=self.initial_balance,
                 start_date=self.start_date,
-                end_date=self.end_date
+                end_date=self.end_date,
+                start_with_min_volume=start_with_min_volume
             )
         
         logging.info(f"Initialized TradingSystem with strategy: {type(self.strategy).__name__}, "
