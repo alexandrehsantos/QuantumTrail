@@ -51,11 +51,19 @@ class HistoricalDataRetriever:
         return df
 
 def prepare_data(data):
+    # Existing indicators
     data['ema_12'] = data['close'].ewm(span=12, adjust=False).mean()
     data['ema_26'] = data['close'].ewm(span=26, adjust=False).mean()
     data['macd'] = data['ema_12'] - data['ema_26']
     data['signal_line'] = data['macd'].ewm(span=9, adjust=False).mean()
     data['rsi'] = compute_rsi(data['close'], period=14)
+    
+    # New features from tick data
+    data['log_tick_volume'] = np.log1p(data['tick_volume'])
+    data['log_spread'] = np.log1p(data['spread'])
+    data['high_low_range'] = data['high'] - data['low']
+    data['close_open_range'] = data['close'] - data['open']
+    
     data['price_change'] = data['close'].shift(-1) - data['close']
     data['target'] = data['price_change'].apply(lambda x: 1 if x > 0 else 0)
     data.dropna(inplace=True)
@@ -110,7 +118,7 @@ def main():
     # Prepare the data
     df = prepare_data(combined_df)
 
-    features = ['macd', 'signal_line', 'rsi']
+    features = ['macd', 'signal_line', 'rsi', 'log_tick_volume', 'log_spread', 'high_low_range', 'close_open_range']
     X = df[features]
     y = df['target']
 

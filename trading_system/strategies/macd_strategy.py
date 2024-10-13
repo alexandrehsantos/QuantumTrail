@@ -2,12 +2,15 @@
 import logging
 import time
 import pandas as pd
-from trading_system.strategies.strategy import Strategy
+from ..strategies.strategy import Strategy
 import MetaTrader5 as mt5
+from order_type import OrderType
+from ..risk_management.risk_manager import RiskManager
 
 class MACDStrategy(Strategy):
-    def __init__(self, data_source, risk_manager, symbol: str, timeframe: int):
-        super().__init__(data_source, risk_manager, symbol, timeframe)
+    def __init__(self, data_source, risk_manager: RiskManager, symbol, timeframe, initial_balance, start_date, end_date):
+        super().__init__(data_source, risk_manager, symbol, timeframe, initial_balance, start_date, end_date)
+        logging.info("Initialized MACDStrategy")
         self.fast_period = 12
         self.slow_period = 26
         self.signal_period = 9
@@ -18,6 +21,8 @@ class MACDStrategy(Strategy):
         self.take_profit_pct = 0.03
         self.required_candles = max(self.slow_period, self.rsi_period) + self.signal_period
         self.warm_up_candles = self.required_candles * 2
+        self.min_volume = 0.01
+        self.trade_open = False
 
     def calculate_indicators(self, data):
         ema_fast = data['close'].ewm(span=self.fast_period, adjust=False).mean()
@@ -33,18 +38,20 @@ class MACDStrategy(Strategy):
         return data
 
     def apply(self) -> dict:
-        logging.info(f"Starting MACD trading for {self.symbol} with timeframe {self.timeframe}")
+        logging.info("Starting MACD trading")
         trades = []
         warm_up_complete = False
 
         while True:
             try:
                 current_time = datetime.now()
-                start_time = current_time - timedelta(minutes=self.warm_up_candles * self.timeframe)
+                # Convert timeframe to an integer if it's a string
+                timeframe_minutes = int(self.timeframe.replace('m', ''))  # Assuming timeframe is like '1m', '5m', etc.
+                start_time = current_time - timedelta(minutes=self.warm_up_candles * timeframe_minutes)
                 data = self.data_source.get_data(self.symbol, self.timeframe, start_date=start_time, end_date=current_time)
                 
                 if len(data) < self.warm_up_candles:
-                    logging.info(f"Not enough data for {self.symbol}. Waiting...")
+                    logging.info(f"Not enough data. Waiting...")
                     time.sleep(5)
                     continue
 
@@ -65,43 +72,38 @@ class MACDStrategy(Strategy):
                 # Buy signal logic
                 if histogram > 0 and prev_histogram <= 0 and rsi < self.rsi_overbought and not self.trade_open:
                     logging.info("Buy signal detected")
-                    position_size = self.risk_manager.calculate_position_size(self.symbol, self.stop_loss_pct * current_price)
+                    position_size = max(self.min_volume, self.risk_manager.calculate_position_size(self.symbol, self.stop_loss_pct * current_price))
                     sl, tp = self.risk_manager.calculate_stop_loss_take_profit(
-                        self.symbol, current_price, mt5.ORDER_TYPE_BUY, 
+                        self.symbol, current_price, OrderType.BUY, 
                         self.stop_loss_pct, self.take_profit_pct
                     )
                     logging.info(f"Attempting to place buy order with SL: {sl}, TP: {tp}, Position Size: {position_size}")
                     order_result = self.data_source.buy_order(self.symbol, position_size, current_price, sl, tp)
-                    if order_result:
+                    if order_result and order_result.retcode == mt5.TRADE_RETCODE_DONE:
                         logging.info(f"Buy order placed at {current_price}")
                         self.trade_open = True
                         trades.append(('buy', current_price, datetime.now()))
                     else:
-                        logging.error("Failed to place buy order")
-
-                # Sell signal logic
-                if histogram < 0 and prev_histogram >= 0 and rsi > self.rsi_oversold and not self.trade_open:
-                    logging.info("Sell signal detected")
-                    position_size = self.risk_manager.calculate_position_size(self.symbol, self.stop_loss_pct * current_price)
-                    sl, tp = self.risk_manager.calculate_stop_loss_take_profit(
-                        self.symbol, current_price, mt5.ORDER_TYPE_SELL, 
-                        self.stop_loss_pct, self.take_profit_pct
-                    )
-                    logging.info(f"Attempting to place sell order with SL: {sl}, TP: {tp}, Position Size: {position_size}")
-                    order_result = self.data_source.sell_order(self.symbol, position_size, current_price, sl, tp)
-                    if order_result:
-                        logging.info(f"Sell order placed at {current_price}")
-                        self.trade_open = True
-                        trades.append(('sell', current_price, datetime.now()))
-                    else:
-                        logging.error("Failed to place sell order")
+                        logging.error(f"Failed to place buy order. Result: {order_result}")
 
                 self.manage_positions(current_price)
                 
-                time.sleep(self.timeframe * 60)
+                time.sleep(timeframe_minutes * 60)
 
             except Exception as e:
                 logging.error(f"An error occurred: {e}")
                 time.sleep(5)
 
         return {'trades': trades}
+
+    def manage_positions(self, current_price: float):
+        # Implement position management logic here
+        pass
+
+    def update_balance(self, balance: float):
+        # Implement balance update logic here
+        pass
+
+    def calculate_trade_profit(self, current_price, entry_price, trade_volume):
+        # Implement logic to calculate trade profit
+        return (entry_price - current_price) * trade_volume
