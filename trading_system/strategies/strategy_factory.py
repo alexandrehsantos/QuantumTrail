@@ -1,6 +1,7 @@
 from .macd_strategy import MACDStrategy
 from .mean_reversion_strategy import MeanReversionStrategy
 from .machine_learning import MLStrategy
+from .xgb_strategy import XGBStrategy
 
 class StrategyFactory:
     @staticmethod
@@ -11,5 +12,7 @@ class StrategyFactory:
             return MeanReversionStrategy
         elif strategy_name == "Machine Learning":
             return MLStrategy
+        elif strategy_name == "XGB":
+            return XGBStrategy
         else:
             raise ValueError(f"Invalid strategy selected: {strategy_name}")

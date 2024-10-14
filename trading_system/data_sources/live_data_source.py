@@ -243,3 +243,24 @@ class LiveDataSource(DataSource):
     def _round_volume(self, volume):
         # Adjust rounding as needed for your broker's requirements
         return round(volume, 2)
+
+    def normalize_price(self, price: float, symbol: str) -> float:
+        # Use MetaTrader 5 API to get the point size for the symbol
+        symbol_info = self.mt5.symbol_info(symbol)
+        if symbol_info is None:
+            raise RuntimeError(f"Failed to get symbol info for {symbol}")
+        
+        # Normalize the price to the nearest tick size
+        point_size = symbol_info.point
+        normalized_price = round(price / point_size) * point_size
+        return normalized_price
+
+    def get_current_spread(self, symbol: str) -> float:
+        # Use MetaTrader 5 API to get the current spread for the symbol
+        symbol_info = self.mt5.symbol_info(symbol)
+        if symbol_info is None:
+            raise RuntimeError(f"Failed to get symbol info for {symbol}")
+        
+        # Calculate the spread as the difference between the ask and bid prices
+        spread = symbol_info.spread * symbol_info.point
+        return spread

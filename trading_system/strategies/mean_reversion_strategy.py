@@ -12,10 +12,11 @@ import MetaTrader5 as mt5
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class MeanReversionStrategy(Strategy):
-    def __init__(self, data_source, risk_manager: RiskManager, symbol, timeframe, initial_balance, start_date, end_date):
+    def __init__(self, data_source, risk_manager, symbol, timeframe, initial_balance, start_date, end_date, **kwargs):
         super().__init__(data_source, risk_manager, symbol, timeframe, initial_balance, start_date, end_date)
         logging.info(f"Initialized MeanReversionStrategy for {symbol} with timeframe {timeframe}")
         self.trade_open = False
+        # Initialize other attributes specific to MeanReversionStrategy
 
     def apply(self):
         logging.info(f"Starting Mean Reversion Strategy application for {self.symbol}")

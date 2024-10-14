@@ -9,6 +9,7 @@ from PyQt5.QtCore import QThread, pyqtSignal, QObject
 from trading_system.trading_system import TradingSystem
 from trading_system.data_sources.live_data_source import LiveDataSource
 from trading_system.strategies.strategy_factory import StrategyFactory
+from trading_system.risk_management.risk_manager import RiskManager
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -53,7 +54,10 @@ class TradingUI(QMainWindow):
 
         self.strategy_label = QLabel('Strategy:')
         self.strategy_combo = QComboBox()
-        self.strategy_combo.addItems(['MACD', 'Mean Reversion', 'Machine Learning'])
+        self.strategy_combo.addItem("MACD")
+        self.strategy_combo.addItem("Mean Reversion")
+        self.strategy_combo.addItem("Machine Learning")
+        self.strategy_combo.addItem("XGB")  # Add the new strategy option
         layout.addWidget(self.strategy_label)
         layout.addWidget(self.strategy_combo)
 
@@ -76,12 +80,33 @@ class TradingUI(QMainWindow):
         data_source = LiveDataSource()
         symbol = self.symbol_input.text()
         timeframe = self.timeframe_combo.currentText()
-        model_path = "training/ml_model.pkl"  # Path to the model file
+        model_path = "training/xgboost_model.pkl"  # Path to the XGBoost model file
 
-        # Check if the user wants to start with the minimum volume
-        start_with_min_volume = self.min_volume_checkbox.isChecked()
+        # Define features
+        features = ['macd', 'signal_line', 'rsi', 'log_tick_volume', 'log_spread', 'high_low_range', 'close_open_range']
 
-        trading_system = TradingSystem(strategy_class, data_source, symbol, timeframe, model_path=model_path, start_with_min_volume=start_with_min_volume)
+        # Initialize RiskManager with required parameters
+        risk_manager = RiskManager(
+            initial_balance=10000,
+            risk_per_trade=0.02,
+            max_risk_per_trade=0.05,
+            min_lot_size=0.01,
+            max_lot_size=1.0
+        )
+
+        # Initialize the trading system with the selected strategy
+        trading_system = TradingSystem(
+            strategy_class=strategy_class,
+            data_source=data_source,
+            symbol=symbol,
+            timeframe=timeframe,
+            model_path=model_path,
+            features=features,
+            risk_manager=risk_manager,
+            initial_balance=10000,
+            start_date=None,
+            end_date=None
+        )
 
         self.worker = TradingWorker(trading_system)
         self.thread = QThread()
