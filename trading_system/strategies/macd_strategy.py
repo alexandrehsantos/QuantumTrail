@@ -8,7 +8,7 @@ from order_type import OrderType
 from ..risk_management.risk_manager import RiskManager
 
 class MACDStrategy(Strategy):
-    def __init__(self, data_source, risk_manager: RiskManager, symbol, timeframe, initial_balance, start_date, end_date):
+    def __init__(self, data_source, risk_manager: RiskManager, symbol, timeframe, initial_balance, start_date, end_date, start_with_min_volume=False, auto_trade=False):
         super().__init__(data_source, risk_manager, symbol, timeframe, initial_balance, start_date, end_date)
         logging.info("Initialized MACDStrategy")
         self.fast_period = 12
@@ -23,6 +23,8 @@ class MACDStrategy(Strategy):
         self.warm_up_candles = self.required_candles * 2
         self.min_volume = 0.01
         self.trade_open = False
+        self.start_with_min_volume = start_with_min_volume
+        self.auto_trade = auto_trade
 
     def calculate_indicators(self, data):
         ema_fast = data['close'].ewm(span=self.fast_period, adjust=False).mean()
@@ -39,6 +41,7 @@ class MACDStrategy(Strategy):
 
     def apply(self) -> dict:
         logging.info("Starting MACD trading")
+        logging.info(f"Params: {self.start_date} - {self.end_date}")
         trades = []
         warm_up_complete = False
 

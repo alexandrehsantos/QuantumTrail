@@ -186,7 +186,7 @@ class LiveDataSource(DataSource):
             return []
         return list(positions)
 
-    def close_position(self, ticket: int) -> bool:
+    def close_position(self, ticket: int):
         self._ensure_initialized()
         position = self.mt5.positions_get(ticket=ticket)
         if position:
@@ -204,7 +204,7 @@ class LiveDataSource(DataSource):
                 "type_filling": self.mt5.ORDER_FILLING_IOC,
             }
             result = self.mt5.order_send(request)
-            return result.retcode == self.mt5.TRADE_RETCODE_DONE
+            return result
         return False
 
     def start_streaming(self, symbol: str, timeframe: int) -> None:
@@ -264,3 +264,27 @@ class LiveDataSource(DataSource):
         # Calculate the spread as the difference between the ask and bid prices
         spread = symbol_info.spread * symbol_info.point
         return spread
+
+    def get_tick_data(self, symbol: str) -> pd.DataFrame:
+        current_time = datetime.now()
+        from_time = current_time - timedelta(seconds=60)
+        ticks = self.mt5.copy_ticks_range(symbol, from_time, current_time, self.mt5.COPY_TICKS_ALL)
+        if ticks is None or len(ticks) == 0:
+            logging.warning(f"No tick data available for {symbol}.")
+            return pd.DataFrame()
+        df = pd.DataFrame(ticks)
+        df['time'] = pd.to_datetime(df['time'], unit='s')
+        df.set_index('time', inplace=True)
+        return df
+
+    def get_min_stop_distance(self, symbol: str) -> float:
+        symbol_info = self.mt5.symbol_info(symbol)
+        if symbol_info is None:
+            raise RuntimeError(f"Failed to get symbol info for {symbol}")
+
+        min_stop_level_points = symbol_info.trade_stops_level
+        point_size = symbol_info.point
+
+        min_stop_distance = min_stop_level_points * point_size
+        return min_stop_distance
+

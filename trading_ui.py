@@ -8,6 +8,7 @@ from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QLineEdi
 from PyQt5.QtCore import QThread, pyqtSignal, QObject
 from trading_system.trading_system import TradingSystem
 from trading_system.data_sources.live_data_source import LiveDataSource
+from trading_system.data_sources.historical_data_source import HistoricalDataSource
 from trading_system.strategies.strategy_factory import StrategyFactory
 from trading_system.risk_management.risk_manager import RiskManager
 
@@ -57,13 +58,24 @@ class TradingUI(QMainWindow):
         self.strategy_combo.addItem("MACD")
         self.strategy_combo.addItem("Mean Reversion")
         self.strategy_combo.addItem("Machine Learning")
-        self.strategy_combo.addItem("XGB")  # Add the new strategy option
+        self.strategy_combo.addItem("XGB")
+        self.strategy_combo.addItem("Chart Pattern")
+        self.strategy_combo.addItem("High Frequency")
+        self.strategy_combo.addItem("TopBottom")
         layout.addWidget(self.strategy_label)
         layout.addWidget(self.strategy_combo)
 
+        # Add a ComboBox for data source selection
+        self.data_source_label = QLabel('Data Source:')
+        self.data_source_combo = QComboBox()
+        self.data_source_combo.addItem("Live")
+        self.data_source_combo.addItem("History")  # Add the "History" option
+        layout.addWidget(self.data_source_label)
+        layout.addWidget(self.data_source_combo)
+
         # Add a checkbox for starting with minimum volume
         self.min_volume_checkbox = QCheckBox("Start with Minimum Volume", self)
-        self.min_volume_checkbox.move(10, 130)  # Adjust position as needed
+        layout.addWidget(self.min_volume_checkbox)
 
         self.start_button = QPushButton('Start Trading')
         self.start_button.clicked.connect(self.start_trading)
@@ -76,16 +88,17 @@ class TradingUI(QMainWindow):
         self.show()
 
     def start_trading(self):
-        strategy_class = StrategyFactory.get_strategy(self.strategy_combo.currentText())
-        data_source = LiveDataSource()
+        strategy_name = self.strategy_combo.currentText()
+        data_source_type = self.data_source_combo.currentText()
         symbol = self.symbol_input.text()
         timeframe = self.timeframe_combo.currentText()
-        model_path = "training/xgboost_model.pkl"  # Path to the XGBoost model file
 
-        # Define features
-        features = ['macd', 'signal_line', 'rsi', 'log_tick_volume', 'log_spread', 'high_low_range', 'close_open_range']
+        # Choose the data source based on user selection
+        if data_source_type == "Live":
+            data_source = LiveDataSource()
+        else:
+            data_source = HistoricalDataSource()
 
-        # Initialize RiskManager with required parameters
         risk_manager = RiskManager(
             initial_balance=10000,
             risk_per_trade=0.02,
@@ -94,30 +107,49 @@ class TradingUI(QMainWindow):
             max_lot_size=1.0
         )
 
-        # Initialize the trading system with the selected strategy
-        trading_system = TradingSystem(
-            strategy_class=strategy_class,
-            data_source=data_source,
-            symbol=symbol,
-            timeframe=timeframe,
-            model_path=model_path,
-            features=features,
-            risk_manager=risk_manager,
-            initial_balance=10000,
-            start_date=None,
-            end_date=None
-        )
+        start_with_min_volume = self.min_volume_checkbox.isChecked()
 
-        self.worker = TradingWorker(trading_system)
-        self.thread = QThread()
-        self.worker.moveToThread(self.thread)
-        self.thread.started.connect(self.worker.run)
-        self.worker.finished.connect(self.thread.quit)
-        self.worker.finished.connect(self.worker.deleteLater)
-        self.thread.finished.connect(self.thread.deleteLater)
-        self.worker.finished.connect(self.trading_finished)
-        self.worker.error.connect(self.trading_error)
-        self.thread.start()
+        try:
+            strategy_params = {
+                'initial_balance': 10000,
+                'start_date': None,
+                'end_date': None,
+                'start_with_min_volume': start_with_min_volume,
+                'auto_trade': True
+            }
+
+            if strategy_name in ["Machine Learning", "XGB"]:
+                model_path = "training/xgboost_model.pkl"
+                model = joblib.load(model_path)
+                features = ['macd', 'signal_line', 'rsi', 'log_tick_volume', 'log_spread', 'high_low_range', 'close_open_range']
+                strategy_params.update({
+                    'model': model,
+                    'features': features
+                })
+
+            strategy = StrategyFactory.create_strategy(
+                strategy_name,
+                data_source,
+                risk_manager,
+                symbol,
+                timeframe,
+                **strategy_params
+            )
+            trading_system = TradingSystem(strategy)
+
+            self.worker = TradingWorker(trading_system)
+            self.thread = QThread()
+            self.worker.moveToThread(self.thread)
+            self.thread.started.connect(self.worker.run)
+            self.worker.finished.connect(self.thread.quit)
+            self.worker.finished.connect(self.worker.deleteLater)
+            self.thread.finished.connect(self.thread.deleteLater)
+            self.worker.finished.connect(self.trading_finished)
+            self.worker.error.connect(self.trading_error)
+            self.thread.start()
+
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to initialize strategy: {str(e)}")
 
     def trading_finished(self, result):
         self.start_button.setEnabled(True)
@@ -133,7 +165,6 @@ class TradingUI(QMainWindow):
 
     def load_ml_model(self):
         try:
-            # Adjust the path for Windows
             model = joblib.load('training/ml_model.pkl')
             return model
         except FileNotFoundError:
@@ -144,21 +175,18 @@ class TradingUI(QMainWindow):
             raise
 
     def start_automation(self):
-        # Logic to start the automation
         self.automation_running = True
-        # ... start automation process ...
 
     def terminate_system(self):
-        """Terminate the entire system."""
         reply = QMessageBox.question(self, 'Terminate System', 
                                      "Are you sure you want to terminate the system?",
                                      QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
 
         if reply == QMessageBox.Yes:
             logging.info("System termination initiated by user.")
-            if self.trading_thread and self.trading_thread.isRunning():
-                self.trading_thread.quit()
-                self.trading_thread.wait()
+            if self.thread and self.thread.isRunning():
+                self.thread.quit()
+                self.thread.wait()
             QApplication.quit()
 
 if __name__ == '__main__':
