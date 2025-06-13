@@ -162,7 +162,8 @@ class ChartPatternStrategy(Strategy):
                 'entry_price': price,
                 'volume': volume,
                 'sl': sl,
-                'tp': tp
+                'tp': tp,
+                'ticket': getattr(result, 'order', None)
             }
             logging.info(f"{order_type.value.capitalize()} order placed successfully. Entry: {price}, SL: {sl}, TP: {tp}, Volume: {volume}")
         else:
@@ -189,9 +190,13 @@ class ChartPatternStrategy(Strategy):
             return
 
         logging.warning(f"Closing position at price: {current_price}")
-        
-        close_type = OrderType.SELL if self.open_position['type'] == OrderType.BUY else OrderType.BUY
-        result = self.data_source.close_order(self.symbol, self.open_position['volume'], current_price, close_type)
+
+        ticket = self.open_position.get('ticket')
+        if ticket is not None:
+            result = self.data_source.close_position(ticket)
+        else:
+            logging.error("No ticket found for open position; cannot close.")
+            return
 
         logging.info(f"Close result type: {type(result)}")
         logging.info(f"Close result content: {result}")
