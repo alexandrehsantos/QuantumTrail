@@ -1,9 +1,11 @@
-﻿from typing import Dict, List, Optional
+﻿from typing import Dict, List, Optional, Any
 import pandas as pd
 from datetime import datetime, timedelta
 from .data_source import DataSource
 from ..utils.time_utils import convert_timeframe
 import MetaTrader5 as mt5
+import logging
+import numpy as np
 
 class LiveDataSource(DataSource):
     def __init__(self, symbol: str = "BTCUSD", timeframe: str = "1m"):
@@ -22,25 +24,39 @@ class LiveDataSource(DataSource):
     def initialize(self) -> None:
         if not self._initialized:
             if not mt5.initialize():
-                print("initialize() failed")
-                mt5.shutdown()
                 raise RuntimeError("MetaTrader5 initialization failed")
             self.mt5 = mt5
             self._initialized = True
 
-    def get_data(self, symbol: str, timeframe: int, start_date=None, end_date=None) -> pd.DataFrame:
+    def get_data(self, symbol: str, timeframe: str, start_date: Optional[datetime] = None, end_date: Optional[datetime] = None) -> pd.DataFrame:
         self._ensure_initialized()
-        if start_date is None:
-            start_date = datetime.now() - timedelta(days=1)
-        if end_date is None:
-            end_date = datetime.now()
-        rates = self.mt5.copy_rates_range(symbol, self._map_timeframe(timeframe), start_date, end_date)
+        
+        mt5_timeframe = self._get_mt5_timeframe(timeframe)
+        
+        # Fetch the latest data
+        rates = mt5.copy_rates_from_pos(symbol, mt5_timeframe, 0, 1000)
+        
+        if rates is None or len(rates) == 0:
+            logging.error(f"No data available for {symbol} with timeframe {timeframe}")
+            return pd.DataFrame()
+        
+        # Convert to DataFrame
         df = pd.DataFrame(rates)
         df['time'] = pd.to_datetime(df['time'], unit='s')
         df.set_index('time', inplace=True)
+        
+        # Process tick data
+        if 'tick_volume' in df.columns:
+            df['log_tick_volume'] = np.log1p(df['tick_volume'])
+        if 'spread' in df.columns:
+            df['log_spread'] = np.log1p(df['spread'])
+        df['high_low_range'] = df['high'] - df['low']
+        df['close_open_range'] = df['close'] - df['open']
+        
+        logging.info(f"Retrieved data for {symbol}. Shape: {df.shape}. Columns: {df.columns.tolist()}")
         return df
 
-    def _map_timeframe(self, timeframe: int) -> int:
+    def _get_mt5_timeframe(self, timeframe: str) -> int:
         mapping = {1: self.mt5.TIMEFRAME_M1, 5: self.mt5.TIMEFRAME_M5, 15: self.mt5.TIMEFRAME_M15,
                    30: self.mt5.TIMEFRAME_M30, 60: self.mt5.TIMEFRAME_H1, 240: self.mt5.TIMEFRAME_H4,
                    1440: self.mt5.TIMEFRAME_D1}
@@ -125,62 +141,71 @@ class LiveDataSource(DataSource):
 
     def buy_order(self, symbol, volume, price, sl, tp, deviation=10, magic=234000, comment="Buy Order"):
         request = {
-            "action": mt5.TRADE_ACTION_DEAL,
+            "action": self.mt5.TRADE_ACTION_DEAL,
             "symbol": symbol,
             "volume": volume,
-            "type": mt5.ORDER_TYPE_BUY,
+            "type": self.mt5.ORDER_TYPE_BUY,
             "price": price,
             "sl": sl,
             "tp": tp,
             "deviation": deviation,
             "magic": magic,
             "comment": comment,
-            "type_time": mt5.ORDER_TIME_GTC,
-            "type_filling": mt5.ORDER_FILLING_FOK,
+            "type_time": self.mt5.ORDER_TIME_GTC,
+            "type_filling": self.mt5.ORDER_FILLING_FOK,
         }
-        result = mt5.order_send(request)
+        result = self.mt5.order_send(request)
         return result
 
     def sell_order(self, symbol, volume, price, sl, tp, deviation=10, magic=234000, comment="Sell Order"):
         request = {
-            "action": mt5.TRADE_ACTION_DEAL,
+            "action": self.mt5.TRADE_ACTION_DEAL,
             "symbol": symbol,
             "volume": volume,
-            "type": mt5.ORDER_TYPE_SELL,
+            "type": self.mt5.ORDER_TYPE_SELL,
             "price": price,
             "sl": sl,
             "tp": tp,
             "deviation": deviation,
             "magic": magic,
             "comment": comment,
-            "type_time": mt5.ORDER_TIME_GTC,
-            "type_filling": mt5.ORDER_FILLING_FOK,
+            "type_time": self.mt5.ORDER_TIME_GTC,
+            "type_filling": self.mt5.ORDER_FILLING_FOK,
         }
-        result = mt5.order_send(request)
+        result = self.mt5.order_send(request)
+        if result.retcode != self.mt5.TRADE_RETCODE_DONE:
+            logging.error(f"Sell order failed, retcode={result.retcode}, comment={result.comment}")
+            return None
+        logging.info(f"Sell order placed successfully. Ticket: {result.order}")
         return result
 
-    def get_positions(self, symbol: str):
-        return mt5.positions_get(symbol=symbol)
+    def get_positions(self, symbol: str) -> List[Any]:
+        self._ensure_initialized()
+        positions = self.mt5.positions_get(symbol=symbol)
+        if positions is None:
+            return []
+        return list(positions)
 
     def close_position(self, ticket: int):
-        position = mt5.positions_get(ticket=ticket)
+        self._ensure_initialized()
+        position = self.mt5.positions_get(ticket=ticket)
         if position:
             request = {
-                "action": mt5.TRADE_ACTION_DEAL,
+                "action": self.mt5.TRADE_ACTION_DEAL,
                 "position": ticket,
                 "symbol": position[0].symbol,
                 "volume": position[0].volume,
-                "type": mt5.ORDER_TYPE_SELL if position[0].type == mt5.ORDER_TYPE_BUY else mt5.ORDER_TYPE_BUY,
-                "price": mt5.symbol_info_tick(position[0].symbol).bid if position[0].type == mt5.ORDER_TYPE_BUY else mt5.symbol_info_tick(position[0].symbol).ask,
+                "type": self.mt5.ORDER_TYPE_SELL if position[0].type == self.mt5.ORDER_TYPE_BUY else self.mt5.ORDER_TYPE_BUY,
+                "price": self.mt5.symbol_info_tick(position[0].symbol).bid if position[0].type == self.mt5.ORDER_TYPE_BUY else self.mt5.symbol_info_tick(position[0].symbol).ask,
                 "deviation": 20,
                 "magic": 234000,
                 "comment": "Close position",
-                "type_time": mt5.ORDER_TIME_GTC,
-                "type_filling": mt5.ORDER_FILLING_IOC,
+                "type_time": self.mt5.ORDER_TIME_GTC,
+                "type_filling": self.mt5.ORDER_FILLING_IOC,
             }
-            result = mt5.order_send(request)
+            result = self.mt5.order_send(request)
             return result
-        return None
+        return False
 
     def start_streaming(self, symbol: str, timeframe: int) -> None:
         logging.info(f"Starting streaming for {symbol} with timeframe {timeframe}")
@@ -214,3 +239,52 @@ class LiveDataSource(DataSource):
                 logging.info(f"No data received for {symbol}. Waiting...")
 
             self._stop_flags[symbol].wait(timeframe * 60)  # Wait for one candle period
+
+    def _round_volume(self, volume):
+        # Adjust rounding as needed for your broker's requirements
+        return round(volume, 2)
+
+    def normalize_price(self, price: float, symbol: str) -> float:
+        # Use MetaTrader 5 API to get the point size for the symbol
+        symbol_info = self.mt5.symbol_info(symbol)
+        if symbol_info is None:
+            raise RuntimeError(f"Failed to get symbol info for {symbol}")
+        
+        # Normalize the price to the nearest tick size
+        point_size = symbol_info.point
+        normalized_price = round(price / point_size) * point_size
+        return normalized_price
+
+    def get_current_spread(self, symbol: str) -> float:
+        # Use MetaTrader 5 API to get the current spread for the symbol
+        symbol_info = self.mt5.symbol_info(symbol)
+        if symbol_info is None:
+            raise RuntimeError(f"Failed to get symbol info for {symbol}")
+        
+        # Calculate the spread as the difference between the ask and bid prices
+        spread = symbol_info.spread * symbol_info.point
+        return spread
+
+    def get_tick_data(self, symbol: str) -> pd.DataFrame:
+        current_time = datetime.now()
+        from_time = current_time - timedelta(seconds=60)
+        ticks = self.mt5.copy_ticks_range(symbol, from_time, current_time, self.mt5.COPY_TICKS_ALL)
+        if ticks is None or len(ticks) == 0:
+            logging.warning(f"No tick data available for {symbol}.")
+            return pd.DataFrame()
+        df = pd.DataFrame(ticks)
+        df['time'] = pd.to_datetime(df['time'], unit='s')
+        df.set_index('time', inplace=True)
+        return df
+
+    def get_min_stop_distance(self, symbol: str) -> float:
+        symbol_info = self.mt5.symbol_info(symbol)
+        if symbol_info is None:
+            raise RuntimeError(f"Failed to get symbol info for {symbol}")
+
+        min_stop_level_points = symbol_info.trade_stops_level
+        point_size = symbol_info.point
+
+        min_stop_distance = min_stop_level_points * point_size
+        return min_stop_distance
+
