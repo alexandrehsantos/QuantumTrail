@@ -9,6 +9,8 @@ from PyQt5.QtCore import QThread, pyqtSignal, QObject
 from trading_system.trading_system import TradingSystem
 from trading_system.data_sources.live_data_source import LiveDataSource
 from trading_system.data_sources.historical_data_source import HistoricalDataSource
+from trading_system.data_sources.binance_data_source import BinanceDataSource
+from trading_system.data_sources.okx_data_source import OKXDataSource
 from trading_system.strategies.strategy_factory import StrategyFactory
 from trading_system.risk_management.risk_manager import RiskManager
 
@@ -69,7 +71,9 @@ class TradingUI(QMainWindow):
         self.data_source_label = QLabel('Data Source:')
         self.data_source_combo = QComboBox()
         self.data_source_combo.addItem("Live")
-        self.data_source_combo.addItem("History")  # Add the "History" option
+        self.data_source_combo.addItem("History")
+        self.data_source_combo.addItem("Binance")
+        self.data_source_combo.addItem("OKX")
         layout.addWidget(self.data_source_label)
         layout.addWidget(self.data_source_combo)
 
@@ -96,6 +100,12 @@ class TradingUI(QMainWindow):
         # Choose the data source based on user selection
         if data_source_type == "Live":
             data_source = LiveDataSource()
+        elif data_source_type == "History":
+            data_source = HistoricalDataSource()
+        elif data_source_type == "Binance":
+            data_source = BinanceDataSource()
+        elif data_source_type == "OKX":
+            data_source = OKXDataSource()
         else:
             data_source = HistoricalDataSource()
 
