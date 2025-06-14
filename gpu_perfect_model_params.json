@@ -1,0 +1,26 @@
+{
+  "generation": 1,
+  "model_name": "XGBoost_GPU",
+  "scaler_name": "standard",
+  "profit_threshold": 0.2,
+  "time_horizon": 15,
+  "best_params": {
+    "model__subsample": 1.0,
+    "model__reg_lambda": 1,
+    "model__reg_alpha": 1,
+    "model__n_estimators": 800,
+    "model__min_child_weight": 1,
+    "model__max_depth": 15,
+    "model__learning_rate": 0.1,
+    "model__colsample_bytree": 0.9,
+    "feature_selection__k": "all"
+  },
+  "cv_mean_accuracy": 0.8862048142044273,
+  "cv_std_accuracy": 0.001187492639155922,
+  "n_samples": 78984,
+  "profit_rate": 0.23675681150612782,
+  "n_features": 113,
+  "training_time": 2345.9014055728912,
+  "gpu_used": true,
+  "timestamp": "2025-06-14T22:22:24.015612"
+}

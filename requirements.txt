@@ -2,25 +2,37 @@
 PyQt5==5.15.6
 pandas>=1.5.3
 numpy>=1.24.2
+python-dotenv>=0.19.0
+
+# Exchange APIs
+coinbase>=2.1.0
+python-binance>=1.0.16
+websockets>=10.3
+aiohttp>=3.8.1
 
 # Data handling and analysis
 yfinance==0.1.70
 ta-lib==0.4.24
 
-# Plotting (if needed)
+# Database
+influxdb-client>=1.36.1
+sqlalchemy>=1.4.36
+
+# Notifications
+python-telegram-bot>=20.0
+discord.py>=2.0.0
+
+# Async support
+asyncio>=3.4.3
+
+# Plotting
 matplotlib>=3.5.1
 
 # Testing
 pytest>=7.1.2
 
-# API interaction (for live trading)
-requests>=2.27.1
-
 # Date and time handling
 python-dateutil>=2.8.2
 
-# Optional: for improved performance
+# Performance
 numba>=0.55.1
-
-# Optional: for database interactions (if implemented)
-sqlalchemy>=1.4.36

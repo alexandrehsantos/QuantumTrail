@@ -1,0 +1,81 @@
+{
+  "perfis_trading": {
+    "conservador": {
+      "min_confidence": "HIGH",
+      "probability_threshold": 0.85,
+      "max_risk_per_trade": 0.005,
+      "stop_loss": 0.0005,
+      "take_profit": 0.003,
+      "cooldown_minutes": 15,
+      "descricao": "Perfil ultra-conservador para máxima segurança"
+    },
+    "balanceado": {
+      "min_confidence": "MEDIUM",
+      "probability_threshold": 0.70,
+      "max_risk_per_trade": 0.01,
+      "stop_loss": 0.001,
+      "take_profit": 0.002,
+      "cooldown_minutes": 5,
+      "descricao": "Perfil equilibrado - configuração padrão recomendada"
+    },
+    "agressivo": {
+      "min_confidence": "MEDIUM",
+      "probability_threshold": 0.65,
+      "max_risk_per_trade": 0.02,
+      "stop_loss": 0.0015,
+      "take_profit": 0.0025,
+      "cooldown_minutes": 3,
+      "descricao": "Perfil agressivo para traders experientes"
+    },
+    "scalping": {
+      "min_confidence": "LOW",
+      "probability_threshold": 0.60,
+      "max_risk_per_trade": 0.03,
+      "stop_loss": 0.002,
+      "take_profit": 0.001,
+      "cooldown_minutes": 1,
+      "descricao": "Perfil scalping - muitos trades pequenos"
+    }
+  },
+  
+  "configuracao_atual": {
+    "min_confidence": "MEDIUM",
+    "probability_threshold": 0.70,
+    "max_risk_per_trade": 0.01,
+    "stop_loss": 0.001,
+    "take_profit": 0.002,
+    "cooldown_minutes": 5
+  },
+  
+  "parametros_modelo": {
+    "acuracia": 0.8862,
+    "target_profit": 0.002,
+    "time_horizon_minutes": 15,
+    "features_count": 113,
+    "training_samples": 78984,
+    "algorithm": "XGBoost_GPU"
+  },
+  
+  "configuracoes_avancadas": {
+    "symbols": ["BTCUSDT", "ETHUSDT", "ADAUSDT"],
+    "update_interval_seconds": 30,
+    "max_concurrent_trades": 3,
+    "enable_notifications": true,
+    "log_level": "INFO",
+    "database_backup_hours": 24
+  },
+  
+  "limites_seguranca": {
+    "max_daily_trades": 50,
+    "max_daily_loss_percent": 5.0,
+    "emergency_stop_loss_percent": 10.0,
+    "min_account_balance": 100.0
+  },
+  
+  "instrucoes": {
+    "como_usar": "Copie uma configuração de 'perfis_trading' para 'configuracao_atual'",
+    "exemplo": "Para usar perfil conservador, copie os valores de 'conservador' para 'configuracao_atual'",
+    "importante": "Sempre teste na Testnet antes de usar com dinheiro real",
+    "suporte": "Consulte README.md para documentação completa"
+  }
+} 

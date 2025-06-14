@@ -1,0 +1,452 @@
+{
+  "timestamp": "2025-06-14T22:58:10.892578",
+  "period": "24h",
+  "summary": {
+    "total_signals": 48,
+    "buy_signals": 0,
+    "hold_signals": 48,
+    "avg_probability": 6.025833333333334,
+    "max_probability": 11.04,
+    "min_probability": 2.26
+  },
+  "trading": {
+    "total_trades": 0,
+    "active_trades": 0,
+    "total_profit": 0
+  },
+  "signals_data": [
+    {
+      "id": 48,
+      "timestamp": "2025-06-14T22:58:05.681740",
+      "signal": "HOLD",
+      "probability": 2.26,
+      "confidence": "HIGH",
+      "price": 104847.19,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 47,
+      "timestamp": "2025-06-14T22:57:59.567569",
+      "signal": "HOLD",
+      "probability": 3.85,
+      "confidence": "HIGH",
+      "price": 104798.45,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 46,
+      "timestamp": "2025-06-14T22:57:53.177230",
+      "signal": "HOLD",
+      "probability": 3.85,
+      "confidence": "HIGH",
+      "price": 104798.46,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 45,
+      "timestamp": "2025-06-14T22:57:47.111953",
+      "signal": "HOLD",
+      "probability": 3.57,
+      "confidence": "HIGH",
+      "price": 104798.46,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 44,
+      "timestamp": "2025-06-14T22:57:41.035938",
+      "signal": "HOLD",
+      "probability": 3.61,
+      "confidence": "HIGH",
+      "price": 104798.45,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 43,
+      "timestamp": "2025-06-14T22:57:34.926014",
+      "signal": "HOLD",
+      "probability": 2.89,
+      "confidence": "HIGH",
+      "price": 104801.39,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 42,
+      "timestamp": "2025-06-14T22:57:28.366685",
+      "signal": "HOLD",
+      "probability": 4.6,
+      "confidence": "HIGH",
+      "price": 104814.0,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 41,
+      "timestamp": "2025-06-14T22:57:22.226468",
+      "signal": "HOLD",
+      "probability": 4.6,
+      "confidence": "HIGH",
+      "price": 104814.0,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 40,
+      "timestamp": "2025-06-14T22:57:15.734399",
+      "signal": "HOLD",
+      "probability": 4.54,
+      "confidence": "HIGH",
+      "price": 104813.99,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 39,
+      "timestamp": "2025-06-14T22:57:09.642157",
+      "signal": "HOLD",
+      "probability": 4.54,
+      "confidence": "HIGH",
+      "price": 104813.99,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 38,
+      "timestamp": "2025-06-14T22:57:03.532556",
+      "signal": "HOLD",
+      "probability": 4.38,
+      "confidence": "HIGH",
+      "price": 104809.99,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 37,
+      "timestamp": "2025-06-14T22:56:57.496214",
+      "signal": "HOLD",
+      "probability": 3.41,
+      "confidence": "HIGH",
+      "price": 104809.98,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 36,
+      "timestamp": "2025-06-14T22:56:51.171207",
+      "signal": "HOLD",
+      "probability": 2.55,
+      "confidence": "HIGH",
+      "price": 104825.4,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 35,
+      "timestamp": "2025-06-14T22:56:44.747979",
+      "signal": "HOLD",
+      "probability": 2.6,
+      "confidence": "HIGH",
+      "price": 104825.39,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 34,
+      "timestamp": "2025-06-14T22:56:38.667013",
+      "signal": "HOLD",
+      "probability": 2.41,
+      "confidence": "HIGH",
+      "price": 104825.4,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 33,
+      "timestamp": "2025-06-14T22:56:32.290275",
+      "signal": "HOLD",
+      "probability": 2.41,
+      "confidence": "HIGH",
+      "price": 104825.39,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 32,
+      "timestamp": "2025-06-14T22:56:26.008279",
+      "signal": "HOLD",
+      "probability": 2.68,
+      "confidence": "HIGH",
+      "price": 104805.79,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 31,
+      "timestamp": "2025-06-14T22:56:19.769927",
+      "signal": "HOLD",
+      "probability": 3.09,
+      "confidence": "HIGH",
+      "price": 104795.32,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 30,
+      "timestamp": "2025-06-14T22:56:13.645245",
+      "signal": "HOLD",
+      "probability": 2.94,
+      "confidence": "HIGH",
+      "price": 104795.32,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 29,
+      "timestamp": "2025-06-14T22:56:07.527269",
+      "signal": "HOLD",
+      "probability": 2.26,
+      "confidence": "HIGH",
+      "price": 104815.54,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 28,
+      "timestamp": "2025-06-14T22:56:01.439153",
+      "signal": "HOLD",
+      "probability": 5.7,
+      "confidence": "HIGH",
+      "price": 104770.29,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 27,
+      "timestamp": "2025-06-14T22:55:55.133260",
+      "signal": "HOLD",
+      "probability": 7.48,
+      "confidence": "HIGH",
+      "price": 104737.8,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 26,
+      "timestamp": "2025-06-14T22:55:49.001113",
+      "signal": "HOLD",
+      "probability": 8.33,
+      "confidence": "HIGH",
+      "price": 104716.45,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 25,
+      "timestamp": "2025-06-14T22:55:42.665821",
+      "signal": "HOLD",
+      "probability": 9.23,
+      "confidence": "HIGH",
+      "price": 104713.99,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 24,
+      "timestamp": "2025-06-14T22:55:36.755648",
+      "signal": "HOLD",
+      "probability": 9.66,
+      "confidence": "HIGH",
+      "price": 104712.11,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 23,
+      "timestamp": "2025-06-14T22:55:30.171274",
+      "signal": "HOLD",
+      "probability": 9.66,
+      "confidence": "HIGH",
+      "price": 104712.11,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 22,
+      "timestamp": "2025-06-14T22:55:23.517186",
+      "signal": "HOLD",
+      "probability": 9.67,
+      "confidence": "HIGH",
+      "price": 104712.1,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 21,
+      "timestamp": "2025-06-14T22:55:17.458793",
+      "signal": "HOLD",
+      "probability": 9.39,
+      "confidence": "HIGH",
+      "price": 104712.1,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 20,
+      "timestamp": "2025-06-14T22:55:11.298482",
+      "signal": "HOLD",
+      "probability": 8.83,
+      "confidence": "HIGH",
+      "price": 104716.45,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 19,
+      "timestamp": "2025-06-14T22:55:04.890952",
+      "signal": "HOLD",
+      "probability": 11.04,
+      "confidence": "HIGH",
+      "price": 104704.42,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 18,
+      "timestamp": "2025-06-14T22:54:58.524972",
+      "signal": "HOLD",
+      "probability": 7.48,
+      "confidence": "HIGH",
+      "price": 104701.18,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 17,
+      "timestamp": "2025-06-14T22:54:52.363615",
+      "signal": "HOLD",
+      "probability": 7.38,
+      "confidence": "HIGH",
+      "price": 104701.18,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 16,
+      "timestamp": "2025-06-14T22:54:46.129237",
+      "signal": "HOLD",
+      "probability": 7.27,
+      "confidence": "HIGH",
+      "price": 104691.18,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 15,
+      "timestamp": "2025-06-14T22:54:39.827318",
+      "signal": "HOLD",
+      "probability": 7.04,
+      "confidence": "HIGH",
+      "price": 104675.93,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 14,
+      "timestamp": "2025-06-14T22:54:33.246422",
+      "signal": "HOLD",
+      "probability": 5.44,
+      "confidence": "HIGH",
+      "price": 104644.87,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 13,
+      "timestamp": "2025-06-14T22:54:27.027542",
+      "signal": "HOLD",
+      "probability": 5.49,
+      "confidence": "HIGH",
+      "price": 104644.87,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 12,
+      "timestamp": "2025-06-14T22:54:20.635597",
+      "signal": "HOLD",
+      "probability": 5.42,
+      "confidence": "HIGH",
+      "price": 104644.86,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 11,
+      "timestamp": "2025-06-14T22:54:14.448785",
+      "signal": "HOLD",
+      "probability": 4.58,
+      "confidence": "HIGH",
+      "price": 104634.17,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 10,
+      "timestamp": "2025-06-14T22:54:07.996134",
+      "signal": "HOLD",
+      "probability": 3.48,
+      "confidence": "HIGH",
+      "price": 104659.99,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 9,
+      "timestamp": "2025-06-14T22:54:01.811067",
+      "signal": "HOLD",
+      "probability": 8.63,
+      "confidence": "HIGH",
+      "price": 104612.28,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 8,
+      "timestamp": "2025-06-14T22:53:54.908008",
+      "signal": "HOLD",
+      "probability": 9.59,
+      "confidence": "HIGH",
+      "price": 104600.0,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 7,
+      "timestamp": "2025-06-14T22:53:48.761733",
+      "signal": "HOLD",
+      "probability": 7.54,
+      "confidence": "HIGH",
+      "price": 104593.89,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 6,
+      "timestamp": "2025-06-14T22:53:42.367184",
+      "signal": "HOLD",
+      "probability": 7.46,
+      "confidence": "HIGH",
+      "price": 104593.89,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 5,
+      "timestamp": "2025-06-14T22:53:36.225346",
+      "signal": "HOLD",
+      "probability": 7.7,
+      "confidence": "HIGH",
+      "price": 104593.88,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 4,
+      "timestamp": "2025-06-14T22:53:30.046041",
+      "signal": "HOLD",
+      "probability": 10.76,
+      "confidence": "HIGH",
+      "price": 104583.43,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 3,
+      "timestamp": "2025-06-14T22:53:23.191480",
+      "signal": "HOLD",
+      "probability": 10.87,
+      "confidence": "HIGH",
+      "price": 104583.42,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 2,
+      "timestamp": "2025-06-14T22:53:16.934826",
+      "signal": "HOLD",
+      "probability": 8.54,
+      "confidence": "HIGH",
+      "price": 104596.71,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "id": 1,
+      "timestamp": "2025-06-14T22:53:10.474439",
+      "signal": "HOLD",
+      "probability": 8.54,
+      "confidence": "HIGH",
+      "price": 104596.71,
+      "symbol": "BTCUSDT"
+    }
+  ],
+  "trades_data": []
+}
