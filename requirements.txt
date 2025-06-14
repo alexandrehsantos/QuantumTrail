@@ -15,6 +15,8 @@ pytest>=7.1.2
 
 # API interaction (for live trading)
 requests>=2.27.1
+python-binance>=1.0.29
+okx>=2.1.2
 
 # Date and time handling
 python-dateutil>=2.8.2
